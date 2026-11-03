@@ -1,0 +1,6 @@
+/target
+
+# Local secrets and manual test data: never commit an API key.
+.env
+*.local.toml
+/dev

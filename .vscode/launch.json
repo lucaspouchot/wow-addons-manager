@@ -1,0 +1,43 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug wowaddons list (dev config)",
+      "cargo": {
+        "args": ["build", "--bin=wowaddons", "--package=wow-addons-manager"],
+        "filter": { "name": "wowaddons", "kind": "bin" }
+      },
+      "args": ["list"],
+      "env": {
+        "WOWADDONS_CONFIG": "${workspaceFolder}/dev/config.toml",
+        "WOWADDONS_DATA_DIR": "${workspaceFolder}/dev/data"
+      },
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug wowaddons (custom args)",
+      "cargo": {
+        "args": ["build", "--bin=wowaddons", "--package=wow-addons-manager"],
+        "filter": { "name": "wowaddons", "kind": "bin" }
+      },
+      "args": ["${input:args}"],
+      "env": {
+        "WOWADDONS_CONFIG": "${workspaceFolder}/dev/config.toml",
+        "WOWADDONS_DATA_DIR": "${workspaceFolder}/dev/data"
+      },
+      "cwd": "${workspaceFolder}"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "args",
+      "type": "promptString",
+      "description": "wowaddons arguments",
+      "default": "--help"
+    }
+  ]
+}
