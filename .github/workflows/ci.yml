@@ -25,9 +25,10 @@ jobs:
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test --all-targets
 
-  release:
+  build:
     name: release build (${{ matrix.target }})
     needs: test
+    # Release tags are `v<semver>`, e.g. `v0.1.0`.
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ${{ matrix.os }}
     strategy:
@@ -36,16 +37,42 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             bin: wowaddons.exe
+            asset: wowaddons-x86_64-pc-windows-msvc.exe
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             bin: wowaddons
+            asset: wowaddons-x86_64-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
       - run: cargo build --release --target ${{ matrix.target }}
+      - name: Rename binary
+        shell: bash
+        run: cp target/${{ matrix.target }}/release/${{ matrix.bin }} ${{ matrix.asset }}
       - uses: actions/upload-artifact@v4
         with:
-          name: wowaddons-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/${{ matrix.bin }}
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}
+
+  release:
+    name: publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$TAG" \
+            --generate-notes
