@@ -126,7 +126,11 @@ impl Journal {
     }
 }
 
-/// All journals of a profile, oldest first (IDs sort by time).
+/// All journals of a profile, oldest first.
+///
+/// Sorted by `created_at`: IDs only have one-second precision, so two
+/// transactions in the same second would otherwise be ordered by their
+/// random suffix.
 pub fn list_journals(dir: &Path) -> Result<Vec<Journal>> {
     let entries = match std::fs::read_dir(dir) {
         Ok(e) => e,
@@ -140,11 +144,16 @@ pub fn list_journals(dir: &Path) -> Result<Vec<Journal>> {
             out.push(Journal::load(&path)?);
         }
     }
-    out.sort_by(|a, b| a.id.cmp(&b.id));
+    out.sort_by(|a, b| {
+        a.created_at
+            .cmp(&b.created_at)
+            .then_with(|| a.id.cmp(&b.id))
+    });
     Ok(out)
 }
 
-/// A new transaction ID: `YYYYMMDDTHHMMSSZ-xxxx`. Sorts by time.
+/// A new transaction ID: `YYYYMMDDTHHMMSSZ-xxxx`. Unique, but only sorts by
+/// time to the second; use `created_at` for ordering.
 pub fn new_transaction_id() -> String {
     let now = OffsetDateTime::now_utc();
     let nanos = now.nanosecond() as u64;
@@ -158,4 +167,58 @@ pub fn new_transaction_id() -> String {
         now.minute(),
         now.second()
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use time::macros::datetime;
+
+    fn journal(dir: &Path, id: &str, created_at: OffsetDateTime) -> Journal {
+        Journal {
+            schema_version: JOURNAL_SCHEMA_VERSION,
+            id: id.into(),
+            profile: "p".into(),
+            kind: TxKind::Update,
+            status: TxStatus::Finalized,
+            created_at,
+            finished_at: None,
+            addons_path: PathBuf::new(),
+            tx_dir: PathBuf::new(),
+            items: Vec::new(),
+            steps: Vec::new(),
+            had_state: false,
+            backup_dir: None,
+            reverts: None,
+            reverted_by: None,
+            error: None,
+            path: dir.join(format!("{id}.json")),
+        }
+    }
+
+    #[test]
+    fn same_second_transactions_sort_by_creation_time() {
+        let dir = tempfile::tempdir().unwrap();
+        // Same second; the older one has the larger random suffix.
+        journal(
+            dir.path(),
+            "20261103T211739Z-ffff",
+            datetime!(2026-11-03 21:17:39.1 UTC),
+        )
+        .save()
+        .unwrap();
+        journal(
+            dir.path(),
+            "20261103T211739Z-0000",
+            datetime!(2026-11-03 21:17:39.2 UTC),
+        )
+        .save()
+        .unwrap();
+        let ids: Vec<_> = list_journals(dir.path())
+            .unwrap()
+            .into_iter()
+            .map(|j| j.id)
+            .collect();
+        assert_eq!(ids, ["20261103T211739Z-ffff", "20261103T211739Z-0000"]);
+    }
 }
