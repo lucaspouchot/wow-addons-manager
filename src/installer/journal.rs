@@ -38,6 +38,14 @@ impl TxStatus {
 pub enum TxKind {
     Update,
     Rollback,
+    Remove,
+}
+
+impl TxKind {
+    /// Kinds that `rollback` can revert.
+    pub fn is_revertible(self) -> bool {
+        matches!(self, TxKind::Update | TxKind::Remove)
+    }
 }
 
 /// One filesystem operation, journaled before it runs.
@@ -52,7 +60,8 @@ pub enum Step {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct JournalItem {
-    pub project: ProjectRef,
+    /// `None` for an untracked addon removed with `remove`.
+    pub project: Option<ProjectRef>,
     pub addon: String,
     pub action: String,
     pub display_from: Option<String>,

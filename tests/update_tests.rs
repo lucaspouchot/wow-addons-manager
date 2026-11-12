@@ -389,7 +389,7 @@ async fn crash_recovery_through_the_cli() {
         addons_path: ctx.addons_path.clone(),
         tx_dir: ctx.tx_dir(id),
         items: vec![JournalItem {
-            project: ProjectRef::curseforge("111"),
+            project: Some(ProjectRef::curseforge("111")),
             addon: "Bartender4".into(),
             action: "ADOPT".into(),
             display_from: None,

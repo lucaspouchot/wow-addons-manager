@@ -10,6 +10,7 @@ pub mod init;
 pub mod link;
 pub mod profile;
 pub mod remote;
+pub mod remove;
 pub mod rollback;
 pub mod scan;
 pub mod update;
@@ -145,6 +146,7 @@ pub async fn dispatch(cli: &Cli, out: &Output) -> Result<Outcome> {
         Command::Update(args) => update::run(&ctx, args).await,
         Command::Inbox(args) => import::inbox(&ctx, args),
         Command::Import(args) => import::import(&ctx, args),
+        Command::Remove(args) => remove::run(&ctx, args),
         Command::Doctor => doctor::run(&ctx).await,
         Command::Link(args) => link::link(&ctx, args).await,
         Command::Unlink(args) => link::unlink(&ctx, args),

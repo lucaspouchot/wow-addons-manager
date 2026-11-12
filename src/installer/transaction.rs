@@ -215,9 +215,12 @@ fn run_steps(
     let mut state = State::load(&state_path, ctx.profile.as_str())
         .map_err(|e| Failure::Error(e.to_string()))?;
     for item in &j.items {
-        state.projects.remove(&item.project);
+        let Some(project) = &item.project else {
+            continue;
+        };
+        state.projects.remove(project);
         if let Some(next) = &item.next {
-            state.projects.insert(item.project.clone(), next.clone());
+            state.projects.insert(project.clone(), next.clone());
         }
     }
     if hooks.fail_before_commit {

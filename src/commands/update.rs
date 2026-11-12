@@ -419,7 +419,7 @@ pub async fn run(ctx: &Ctx<'_>, args: &UpdateArgs) -> Result<Outcome> {
                 .unwrap_or_default();
             folders.sort_by_key(|f| (*f != main, f.to_lowercase()));
             JournalItem {
-                project: entry.project.clone().expect("candidates have a project"),
+                project: entry.project.clone(),
                 addon: entry.name.clone(),
                 action: format!("{:?}", r.cand.action).to_uppercase(),
                 display_from: entry
@@ -750,7 +750,8 @@ fn nothing_message(unmanaged_left: usize) -> String {
 
 /// Used by `rollback` to check folders before reverting.
 pub fn state_matches(state: &State, item: &JournalItem) -> bool {
-    match (&item.next, state.projects.get(&item.project)) {
+    let current = item.project.as_ref().and_then(|p| state.projects.get(p));
+    match (&item.next, current) {
         (Some(next), Some(current)) => {
             next.file_id == current.file_id && next.transaction_id == current.transaction_id
         }

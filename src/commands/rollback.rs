@@ -97,7 +97,7 @@ pub fn rollback(ctx: &Ctx, args: &RollbackArgs) -> Result<Outcome> {
     let target = journals
         .iter()
         .rev()
-        .find(|j| j.kind == TxKind::Update && j.status.is_committed() && j.reverted_by.is_none())
+        .find(|j| j.kind.is_revertible() && j.status.is_committed() && j.reverted_by.is_none())
         .cloned()
         .ok_or_else(|| {
             AppError::Other(format!(
@@ -134,7 +134,13 @@ pub fn rollback(ctx: &Ctx, args: &RollbackArgs) -> Result<Outcome> {
             let p = profile.addons_path.join(f);
             p.is_dir() && !p.is_symlink()
         });
-        if !state_matches(&state, item) || !present {
+        // Folders the transaction removed must still be gone, or restoring them would collide.
+        let removed_gone = item
+            .move_aside
+            .iter()
+            .filter(|f| !item.install.iter().any(|i| i.eq_ignore_ascii_case(f)))
+            .all(|f| std::fs::symlink_metadata(profile.addons_path.join(f)).is_err());
+        if !state_matches(&state, item) || !present || !removed_gone {
             return Err(AppError::Blocked(format!(
                 "{} has changed since transaction {}; refusing to roll back",
                 item.addon, target.id
@@ -160,7 +166,9 @@ pub fn rollback(ctx: &Ctx, args: &RollbackArgs) -> Result<Outcome> {
             item.display_to.as_deref().unwrap_or("-"),
             item.display_from.as_deref().unwrap_or("(not managed)")
         ));
-        text.push(format!("             remove: {}", item.install.join(", ")));
+        if !item.install.is_empty() {
+            text.push(format!("             remove: {}", item.install.join(", ")));
+        }
         if !item.move_aside.is_empty() {
             text.push(format!(
                 "             restore: {}",

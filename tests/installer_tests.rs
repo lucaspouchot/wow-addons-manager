@@ -189,7 +189,7 @@ fn prepare(f: &Fixture, id: &str) -> Journal {
         addons_path: f.ctx.addons_path.clone(),
         tx_dir,
         items: vec![JournalItem {
-            project: ProjectRef::curseforge("1"),
+            project: Some(ProjectRef::curseforge("1")),
             addon: "Example".into(),
             action: "UPDATE".into(),
             display_from: Some("v1".into()),

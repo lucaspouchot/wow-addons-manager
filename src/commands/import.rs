@@ -546,7 +546,7 @@ pub fn import(ctx: &Ctx, args: &ImportArgs) -> Result<Outcome> {
     let journal_items: Vec<JournalItem> = ready
         .iter()
         .map(|r| JournalItem {
-            project: r.project.clone(),
+            project: Some(r.project.clone()),
             addon: r.entry.name.clone(),
             action: "IMPORT".into(),
             display_from: from_version(&r.entry),

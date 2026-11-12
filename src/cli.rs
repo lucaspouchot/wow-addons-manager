@@ -64,6 +64,9 @@ pub enum Command {
     Inbox(InboxArgs),
     /// Install the ZIP files of the inbox (offline)
     Import(ImportArgs),
+    /// Delete addons from the AddOns folder in one transaction (offline)
+    #[command(visible_alias = "uninstall")]
+    Remove(RemoveArgs),
     /// Check the configuration, paths and access
     Doctor,
     /// Link an addon folder to a CurseForge project
@@ -188,6 +191,21 @@ pub struct ImportArgs {
 }
 
 #[derive(Debug, Args)]
+pub struct RemoveArgs {
+    /// Addons to remove (name or any of their folders, see `wowaddons list`)
+    #[arg(value_name = "ADDON", required = true)]
+    pub addons: Vec<String>,
+
+    /// Show the plan without changing anything
+    #[arg(long)]
+    pub dry_run: bool,
+
+    /// Skip the confirmation prompt (safety checks still apply)
+    #[arg(short, long)]
+    pub yes: bool,
+}
+
+#[derive(Debug, Args)]
 pub struct LinkArgs {
     /// Addon folder name
     pub addon: String,
@@ -280,6 +298,7 @@ impl Command {
             Command::Update(_) => "update",
             Command::Inbox(_) => "inbox",
             Command::Import(_) => "import",
+            Command::Remove(_) => "remove",
             Command::Doctor => "doctor",
             Command::Link(_) => "link",
             Command::Unlink(_) => "unlink",

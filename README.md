@@ -34,7 +34,7 @@ The `WOWADDONS_CURSEFORGE_API_KEY` environment variable still works and takes pr
 
 The key is never written to the config file, the logs or the JSON output. It is only sent to `api.curseforge.com` and the `forgecdn.net` CDN, always as a header. A redirect to any other host is refused.
 
-Without a key, everything that works offline keeps working: `scan`, `list`, `config`, `profile`, `link --offline`, `inbox`, `import`, `history` and `rollback`.
+Without a key, everything that works offline keeps working: `scan`, `list`, `config`, `profile`, `link --offline`, `inbox`, `import`, `remove`, `history` and `rollback`.
 
 ## Quick start
 
@@ -81,6 +81,16 @@ wowaddons import    # installs them (offline, no API key needed)
 
 Archives that cannot be installed stay in the inbox, with a reason: `UNTRACKED` (no project found; `link` the installed addon first), `NOT_INSTALLED`, `DUPLICATE` (two ZIP files for one addon), `CONFLICT`, `ERROR` (invalid archive). An archive identical to the installed one is `ALREADY_INSTALLED` and is removed.
 
+## Removing an addon
+
+```bash
+wowaddons remove Details --dry-run   # shows every folder that will go
+wowaddons remove Details             # asks, then removes
+wowaddons rollback                   # brings it back
+```
+
+`remove` takes the names shown by `list` (or any folder of the addon) and removes every folder of that addon: a project shipped as `Details` and `Details_Options` goes as a whole. It works for managed, unmanaged and untracked addons, and refuses protected folders. The folders are kept as a backup like any other transaction, so `rollback` can restore them, as long as no folder with the same name was put back in the meantime. Explicit links (`link`) are kept.
+
 ## Commands
 
 | Command | What it does |
@@ -93,9 +103,10 @@ Archives that cannot be installed stay in the inbox, with a reason: `UNTRACKED` 
 | `doctor` | Check config, paths, volumes, free space, API access and pending transactions. |
 | `inbox` | Open the profile's inbox, the folder for ZIP files downloaded by hand. `--no-open` only prints its path. |
 | `import` | Install the ZIP files of the inbox in one transaction. Offline. `--dry-run`, `--yes`. |
+| `remove <addon>...` | Delete addons (all their folders) in one transaction, with a backup. Offline. `--dry-run`, `--yes`. Alias: `uninstall`. |
 | `link <addon> --project-id <id>` / `unlink <addon>` | Explicit link between a folder and a CurseForge project. |
 | `history` | Past transactions of the profile. |
-| `rollback [<id>]` | Revert the most recent committed transaction (strict reverse order). |
+| `rollback [<id>]` | Revert the most recent committed transaction (strict reverse order), including a `remove`. |
 | `config list\|get\|set\|unset` | Global settings. `config list` shows each value and its source. |
 | `profile add\|list\|show\|set\|unset\|use\|remove` | Profiles. `remove` never touches `AddOns`; `--purge` also deletes its state and backups. |
 | `auth set-key\|status\|clear` | Store the API key in the system secret store, show where it comes from, or remove it. |
