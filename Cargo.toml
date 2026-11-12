@@ -39,5 +39,9 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 zip = { version = "9.3.0", default-features = false, features = ["deflate"] }
 
+[build-dependencies]
+# Windows version information and manifest, see build.rs.
+winresource = "0.1.34"
+
 [dev-dependencies]
 wiremock = "0.6.5"
